@@ -1,0 +1,82 @@
+[EMAIL]
+subject1 = Meeting {RANDOM_ALPHA_2}-{RANDOM_NUM_6} confirmation in {current_date}
+subject2 = Meeting Confirmation {RANDOM_ALPHA_2}-{RANDOM_NUM_6} on June 18, 2025
+subject3 = Your Meeting #{RANDOM_ALPHA_3}-{RANDOM_NUM_6} Confirmed – June 18, 2025
+subject5 = Confirmed: Meeting {RANDOM_ALPHA_2}-{RANDOM_NUM_6} | June 18, 2025
+subject_strategy = sequential
+company_brand = BusinessPal Solutions
+time_of_day_greeting = true
+personalization_level = high
+
+[SENDER_ROTATION]
+sender_names = BusinessPal,No Reply,Tech Bros,Guffy Shop,TechCorp Solutions,Global ComputerCorp Enterprises,NextGen Systems,InnovateInc,FutureTech Labs,Prime Business
+strategy = sequential
+time_based_mapping = morning:BusinessPal,Support;afternoon:TechCorp,Sales;evening:Customer Service,Help
+
+[ATTACHMENT]
+attachment: true
+format: PDF
+rotate_formats: true
+selected_formats: pdf
+
+
+[PARALLEL]
+workers = 5
+max_workers = 8
+
+[RATE_LIMITING]
+requests_per_second = 2
+retry_delay = 5
+max_retries = 3
+exponential_backoff = true
+jitter = true
+
+[LIMITS]
+rotation_limit = 100
+daily_limit = 500
+account_cooldown = 300
+
+[ADVANCED]
+smart_delay = true
+error_recovery = true
+health_monitoring = true
+
+
+[CUSTOM_FIELDS]
+custom_post_code = 9899,9000,9999,8888,7777
+custom_region = North,South,East,West,Central
+custom_priority = High,Medium,Low,Urgent,Normal
+custom_department = Sales,Support,Billing,Technical
+custom_category = Premium,Standard,Basic,Enterprise
+
+[TEMPLATES]
+email_template_dir = email
+attachment_template_dir = attachment
+template_encoding = utf-8
+auto_detect_encoding = true
+fallback_template = default.html
+
+
+[FILES]
+gmail_accounts_file = gmail_accounts.txt
+recipients_file = mails.txt
+failed_log_file = failed.txt
+success_log_file = success.txt
+stats_file = stats.json
+backup_config = true
+
+[LOGGING]
+log_level = INFO
+log_file = sender.log
+log_format = %(asctime)s - %(levelname)s - %(message)s
+max_log_size = 10485760
+backup_count = 5
+console_output = true
+
+[CLI]
+default_mode = tui
+auto_start = false
+batch_mode = false
+verbose = false
+quiet = false
+force_cli = false

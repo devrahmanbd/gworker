@@ -34,24 +34,6 @@ try:
     GOOGLE_AUTH_HTTPLIB2_AVAILABLE = True
 except ImportError:
     GOOGLE_AUTH_HTTPLIB2_AVAILABLE = False
-CLIENT_CONFIG = {
-    "web": {
-        "client_id": "560355320864-e2mt9vdkqck5r1956i9lcs2n8gc1u032.apps.googleusercontent.com",
-        "project_id": "fiery-webbing-463212-h0",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_secret": "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",
-        "redirect_uris": [
-            "http://127.0.0.1:8080/",
-            "http://127.0.0.1:8080/oauth2callback",
-            "http://localhost:8080/",
-            "http://localhost:8080/oauth2callback",
-        ],
-    }
-}
-SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-
 
 class EnhancedGmailBulkSender:
     def __init__(self, config):
@@ -222,9 +204,7 @@ class EnhancedGmailBulkSender:
                 if not email_template:
                     account["status"] = "idle"
                     return False
-                html_content = self.template_rotator.load_template_content(
-                    email_template
-                )
+                html_content = self.template_rotator.load_template_content(email_template)
                 if not html_content:
                     account["status"] = "idle"
                     return False
@@ -234,15 +214,22 @@ class EnhancedGmailBulkSender:
                 personalized_subject = self.replace_variables_enhanced(
                     subject_template, variables
                 )
-                personalized_html = self.replace_variables_enhanced(
-                    html_content, variables
-                )
-                message = MIMEMultipart()
-                message["to"] = recipient
-                message["subject"] = personalized_subject
-                message["from"] = formataddr((current_sender_name, account["email"]))
-                html_part = MIMEText(personalized_html, "html")
-                message.attach(html_part)
+                personalized_html = self.replace_variables_enhanced(html_content, variables)
+                # Generate plain-text version (simple fallback: strip HTML tags)
+                import re
+
+                plain_text = re.sub("<[^<]+?>", "", personalized_html)
+                # Compose message with "alternative" subtype
+                message = MIMEMultipart("alternative")
+                message["To"] = recipient
+                message["From"] = formataddr((current_sender_name, account["email"]))
+                message["Subject"] = personalized_subject
+                if "reply_to" in variables:
+                    message["Reply-To"] = variables["reply_to"]
+                # Attach both plain and HTML parts
+                message.attach(MIMEText(plain_text, "plain"))
+                message.attach(MIMEText(personalized_html, "html"))
+                # Attachments
                 if self.attachment_enabled:
                     attachment_template = (
                         self.template_rotator.get_next_attachment_template()
@@ -284,26 +271,26 @@ class EnhancedGmailBulkSender:
                     self.stats["total_sent"] += 1
                 account["status"] = "active"
                 print(
-                    f"✅ Email sent from '{current_sender_name}' <{account['email']}> to {recipient}"
+                    f"✓ Email sent from '{current_sender_name}' <{account['email']}> to {recipient} | Gmail ID: {send_message.get('id')}"
                 )
                 return True
             except HttpError as e:
                 error_str = str(e)
                 error_code = getattr(e, "resp", {}).get("status", 0)
                 suspension_conditions = [
-                        error_code in [401, 403, 429],
-                        "invalid_grant" in error_str.lower(),
-                        "access_denied" in error_str.lower(),
-                        "user rate limit exceeded" in error_str.lower(),
-                        "unauthorized_client" in error_str.lower(),
-                        "account suspended" in error_str.lower(),
-                        "token has been revoked" in error_str.lower(),
-                        "bad request" in error_str.lower()
-                        and "invalid_grant" in error_str.lower(),
+                    error_code in [401, 403, 429],
+                    "invalid_grant" in error_str.lower(),
+                    "access_denied" in error_str.lower(),
+                    "user rate limit exceeded" in error_str.lower(),
+                    "unauthorized_client" in error_str.lower(),
+                    "account suspended" in error_str.lower(),
+                    "token has been revoked" in error_str.lower(),
+                    "bad request" in error_str.lower()
+                    and "invalid_grant" in error_str.lower(),
                 ]
                 if any(suspension_conditions):
                     print(
-                        f"🚫 Suspension condition detected for {account['email']}: {error_str}"
+                        f"⚠️ Suspension condition detected for {account['email']}: {error_str}"
                     )
                     self.suspension_manager.move_account_to_suspend(
                         account["email"],
@@ -316,13 +303,13 @@ class EnhancedGmailBulkSender:
                     retry_count += 1
                     if retry_count < max_retries:
                         print(
-                            f"⚠️ HTTP error attempt {retry_count}/{max_retries} for {recipient}: {error_str}"
+                            f"⏳ HTTP error attempt {retry_count}/{max_retries} for {recipient}: {error_str}"
                         )
                         time.sleep(2**retry_count)
                         continue
                     else:
                         print(
-                            f"❌ HTTP error max retries reached for {recipient}: {error_str}"
+                            f"✗ HTTP error max retries reached for {recipient}: {error_str}"
                         )
                         account["status"] = "failed"
                         return False
@@ -340,7 +327,7 @@ class EnhancedGmailBulkSender:
                     retry_count += 1
                     if retry_count < max_retries:
                         print(
-                            f"⚠️ SSL error attempt {retry_count}/{max_retries} for {recipient}: {error_str}"
+                            f"⏳ SSL error attempt {retry_count}/{max_retries} for {recipient}: {error_str}"
                         )
                         print(f"🔄 Recreating SSL connection and retrying...")
                         self.ssl_pool.release_connection(account)
@@ -348,12 +335,12 @@ class EnhancedGmailBulkSender:
                         continue
                     else:
                         print(
-                            f"❌ SSL error max retries reached for {recipient}: {error_str}"
+                            f"✗ SSL error max retries reached for {recipient}: {error_str}"
                         )
                         account["status"] = "failed"
                         return False
                 else:
-                    print(f"❌ Non-SSL error sending email to {recipient}: {error_str}")
+                    print(f"✗ Non-SSL error sending email to {recipient}: {error_str}")
                     account["status"] = "failed"
                     return False
         return False
@@ -607,94 +594,6 @@ class EnhancedGmailBulkSender:
             print(f"❌ Error loading configuration: {e}")
             return False
 
-    def get_next_account(self):
-        with self.rotation_lock:
-            available_accounts = [
-                acc
-                for acc in self.accounts
-                if acc["daily_sent"] < acc["max_daily_limit"]
-                and acc["status"] != "failed"
-            ]
-            if not available_accounts:
-                return
-            current_account = available_accounts[
-                self.current_account_index % len(available_accounts)
-            ]
-            if current_account["session_sent"] >= current_account["rotation_limit"]:
-                current_account["session_sent"] = 0
-                self.current_account_index = (self.current_account_index + 1) % len(
-                    available_accounts
-                )
-                current_account = available_accounts[
-                    self.current_account_index % len(available_accounts)
-                ]
-            return current_account
-
-    def generate_comprehensive_variables(self, recipient_index=0, recipient_email=None):
-        variables = {
-            "date": self.variable_generator.generate_current_date(),
-            "current_date": self.variable_generator.generate_current_date(),
-            "current_time": self.variable_generator.date_formatter.format_datetime(
-                datetime.now(), "%I:%M %p"
-            ),
-            "time_of_day": self.variable_generator.generate_time_of_day(),
-            "name": (
-                self.variable_generator.extract_name_from_email(
-                    recipient_email, preserve_numbers=True
-                )
-                if recipient_email
-                else self.variable_generator.generate_dynamic_name()
-            ),
-            "NAME": (
-                self.variable_generator.extract_name_from_email(
-                    recipient_email, preserve_numbers=True
-                )
-                if recipient_email
-                else self.variable_generator.generate_dynamic_name()
-            ),
-            "recipient_name": (
-                self.variable_generator.extract_name_from_email(
-                    recipient_email, preserve_numbers=True
-                )
-                if recipient_email
-                else self.variable_generator.generate_dynamic_name()
-            ),
-            "email": recipient_email or "recipient@example.com",
-            "EMAIL": recipient_email or "recipient@example.com",
-            "recipient_email": recipient_email or "recipient@example.com",
-            "sender_name": self.sender_name,
-            "company_name": self.company_brand,
-            "brand": self.company_brand,
-            "invoice_number": self.variable_generator.generate_invoice_number(),
-            "invoice_category": self.variable_generator.generate_invoice_category(),
-            "phone_number": self.variable_generator.generate_phone_number(),
-            "total_order_product": self.variable_generator.generate_total_order_product(),
-            "RANDOM_NUM": self.variable_generator.generate_random_num_with_length(5),
-            "RANDOM_ALPHA_2": self.variable_generator.generate_random_alpha_with_length(
-                2
-            ),
-            "RANDOM_ALPHA_3": self.variable_generator.generate_random_alpha_with_length(
-                3
-            ),
-            "short_date": self.variable_generator.generate_current_date("%m/%d/%Y"),
-            "long_date": self.variable_generator.generate_current_date("%A, %B %d, %Y"),
-            "iso_date": self.variable_generator.generate_current_date("%Y-%m-%d"),
-            "recipient_index": recipient_index + 1,
-            "sequence_number": f"{recipient_index+1:04d}",
-        }
-        return variables
-
-    def replace_variables_enhanced(self, template, variables):
-        result = self.dynamic_processor.process_dynamic_variables(template, variables)
-        for key, value in variables.items():
-            placeholder = f"{ {key}} "
-            if placeholder in result:
-                result = result.replace(placeholder, str(value))
-        unreplaced = re.findall("\\{([^}]+)\\}", result)
-        if unreplaced:
-            print(f"⚠️ Unreplaced variables found: {unreplaced}")
-        return result
-
     def load_gmail_accounts(self, file_path="gmail_accounts.txt"):
         accounts = []
         try:
@@ -764,10 +663,21 @@ class EnhancedGmailBulkSender:
                                 ],
                             }
                         }
+                        client_config = {
+                        "web": {
+                            "client_id": self.config.get("AUTHENTICATION", "client_id"),
+                            "client_secret": self.config.get("AUTHENTICATION", "client_secret"),
+                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri": "https://oauth2.googleapis.com/token",
+                            "redirect_uris": ["http://127.0.0.1:8080/"],
+                        }
+                        }
+
                         flow = InstalledAppFlow.from_client_config(
                             client_config,
                             ["https://www.googleapis.com/auth/gmail.send"],
                         )
+
                         creds = flow.run_local_server(port=8080)
 
                     with open(token_file, "w") as token:
@@ -857,29 +767,6 @@ class EnhancedGmailBulkSender:
             f.write(
                 f"{failed_entry['timestamp']} | {recipient} | {account_email} | {error}\n"
             )
-
-    def get_next_account(self):
-        with self.rotation_lock:
-            available_accounts = [
-                acc
-                for acc in self.accounts
-                if acc["daily_sent"] < acc["max_daily_limit"]
-                and acc["status"] != "failed"
-            ]
-            if not available_accounts:
-                return
-            current_account = available_accounts[
-                self.current_account_index % len(available_accounts)
-            ]
-            if current_account["session_sent"] >= current_account["rotation_limit"]:
-                current_account["session_sent"] = 0
-                self.current_account_index = (self.current_account_index + 1) % len(
-                    available_accounts
-                )
-                current_account = available_accounts[
-                    self.current_account_index % len(available_accounts)
-                ]
-            return current_account
 
     def email_worker(self, worker_id, email_queue, result_queue):
         print(f"🔧 Worker {worker_id} started")

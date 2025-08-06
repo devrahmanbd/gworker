@@ -1,46 +1,58 @@
 [EMAIL]
-subject1 = Meeting {RANDOM_ALPHA_2}-{RANDOM_NUM_6} confirmation in {current_date}
-subject2 = Meeting Confirmation {RANDOM_ALPHA_2}-{RANDOM_NUM_6} on June 18, 2025
-subject3 = Your Meeting #{RANDOM_ALPHA_3}-{RANDOM_NUM_6} Confirmed – June 18, 2025
-subject5 = Confirmed: Meeting {RANDOM_ALPHA_2}-{RANDOM_NUM_6} | June 18, 2025
+subject1 = Invoice {invoice_number} - Order #{custom_post_code} - {current_date}
+subject2 = Payment Receipt {invoice_category} - {phone_number}
+subject3 = Order Confirmation {RANDOM_ALPHA_3}-{invoice_number}
+subject4 = Friday Meeting in Calendar – {name} – {date}
+subject5 = {company_name} - Your Order {RANDOM_NUM_6} is Ready
+subject6 = Hello {NAME}, Account {RANDOM_ALPHANUMERIC_8} Updated
+subject7 = {sender_name} - Delivery {CUSTOM_DATE_+7_YYYY-MM-DD}
+subject8 = Urgent: Action Required - {name}
+subject9 = Welcome to {company_name} - Getting Started
+subject10 = Thank You {name} - Order Complete
 subject_strategy = sequential
 company_brand = BusinessPal Solutions
 time_of_day_greeting = true
 personalization_level = high
 
 [SENDER_ROTATION]
-sender_names = BusinessPal,No Reply,Tech Bros,Guffy Shop,TechCorp Solutions,Global ComputerCorp Enterprises,NextGen Systems,InnovateInc,FutureTech Labs,Prime Business
+sender_names = BusinessPal,No Reply,Bake Bros,Guffy Shop,TechCorp Solutions,Global Enterprises,NextGen Systems,InnovateInc,FutureTech Labs,Prime Business
 strategy = sequential
+weights = 
 time_based_mapping = morning:BusinessPal,Support;afternoon:TechCorp,Sales;evening:Customer Service,Help
 
 [ATTACHMENT]
-attachment: true
-format: PDF
-rotate_formats: true
-selected_formats: pdf
+attachment = true
+format = PDF
+rotate_formats = true
+selected_formats = PDF,JPG,PNG,WebP
+quality = 95
+compression_level = 6
+page_size = A4
+orientation = portrait
+conversion_backend = auto
 
-
-[PARALLEL]
-workers = 5
-max_workers = 8
+[LIMITS]
+rotation_limit = 10
+daily_limit = 300
+chunk_size = 100
+account_cooldown = 300
+max_retry_attempts = 3
+backoff_multiplier = 2
 
 [RATE_LIMITING]
-requests_per_second = 2
-retry_delay = 5
-max_retries = 3
+requests_per_second = 0.5
+retry_delay = 8
+max_retries = 5
+batch_delay = 10
 exponential_backoff = true
 jitter = true
 
-[LIMITS]
-rotation_limit = 100
-daily_limit = 500
-account_cooldown = 300
-
-[ADVANCED]
-smart_delay = true
-error_recovery = true
-health_monitoring = true
-
+[PARALLEL]
+workers = 1
+max_workers = 4
+queue_size = 1000
+timeout = 300
+use_threading = true
 
 [CUSTOM_FIELDS]
 custom_post_code = 9899,9000,9999,8888,7777
@@ -56,6 +68,15 @@ template_encoding = utf-8
 auto_detect_encoding = true
 fallback_template = default.html
 
+[AUTHENTICATION]
+client_id = 560355320864-e2mt9vdkqck5r1956i9lcs2n8gc1u032.apps.googleusercontent.com
+client_secret = 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
+project_id = fiery-webbing-463212-h0
+auth_uri = https://accounts.google.com/o/oauth2/auth
+token_uri = https://oauth2.googleapis.com/token
+auth_provider_x509_cert_url = https://www.googleapis.com/oauth2/v1/certs
+redirect_uri = http://127.0.0.1:8080/
+scopes = https://www.googleapis.com/auth/gmail.send
 
 [FILES]
 gmail_accounts_file = gmail_accounts.txt
@@ -64,6 +85,7 @@ failed_log_file = failed.txt
 success_log_file = success.txt
 stats_file = stats.json
 backup_config = true
+suspend_file = suspend.txt
 
 [LOGGING]
 log_level = INFO
@@ -80,3 +102,12 @@ batch_mode = false
 verbose = false
 quiet = false
 force_cli = false
+
+[ADVANCED]
+smart_delay = true
+adaptive_limits = true
+error_recovery = true
+health_monitoring = true
+performance_optimization = true
+memory_management = true
+

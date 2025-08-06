@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PayPal Billing Receipt</title>
+    <style>
+        body {
+            background-color: #f6f6f6;
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            color: #333;
+        }
+
+        .receipt-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 25px;
+            border-radius: 6px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header img {
+            height: 24px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #0070ba;
+        }
+
+        .info p {
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #0070ba;
+            color: white;
+            font-size: 14px;
+        }
+
+        .total {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .note {
+            background-color: #f1f1f1;
+            padding: 12px;
+            font-size: 13px;
+            margin-top: 25px;
+            border-left: 4px solid #0070ba;
+        }
+
+        .support {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #0070ba;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="receipt-container">
+        <h1><span style="color: #333399;"><em><strong>Pay<span style="color: #3366ff;">Pal</span></strong></em></span></h1>
+        <div class="header">
+            <div><strong>Support:</strong> +18338693139</div>
+        </div>
+        <h2>Billing Receipt</h2>
+        <div class="info">
+            <p><strong>Invoice Number:</strong> {invoice_category}-{RANDOM_ALPHA_2}-{RANDOM_NUM}</p>
+            <p><strong>Date:</strong> {date}</p>
+            <p><strong>Transaction ID:</strong> {RANDOM_NUM_13}</p>
+            <p><strong>Payment Method:</strong> PayPal Credit</p>
+        </div>
+        <table class="fr-table-selection-hover">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ethereum<br></td>
+                    <td>0.35<br></td>
+                    <td>$899.00</td>
+                    <td>$899.00</td>
+                </tr>
+                <tr>
+                    <td>Transection Fee</td>
+                    <td>-</td>
+                    <td>$0.00</td>
+                    <td>$0.00</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="total">Total Billed: $899.00</div>
+        <div class="note">If you did not authorize this transaction, please contact PayPal Support immediately.<br><em>Refund requests are only accepted within 24 hours of this invoice date.</em></div>
+        <div class="support">PayPal Support: +18338693139</div>
+        <div class="footer">This is an automated message. Do not reply.</div>
+    </div>
+</body>
+
+</html>
